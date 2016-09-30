@@ -1,0 +1,62 @@
+version: "2"
+
+networks:
+  "k8s_service":
+    external:
+      name: k8s_service
+  "k8s_infra":
+    driver: "bridge"
+    ipam:
+      config:
+         - subnet: "172.18.0.0/16"
+
+services:
+  etcd:
+    image: quay.io/coreos/etcd:latest
+    networks:
+      k8s_infra:
+    ports:
+      - "2379:2379"
+    command: /usr/local/bin/etcd -listen-client-urls http://0.0.0.0:2379 --advertise-client-urls http://etcd:2379
+
+  "kubelet":
+    image: "${K8S_IMAGE}"
+    privileged: true
+    networks:
+      k8s_infra:
+      k8s_service:
+    ports:
+      - "10250:10250"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - "/var/run/docker:/var/run/docker"
+      - "/var/run/docker.pid:/var/run/docker.pid:ro"
+      - "/usr/bin/docker:/usr/bin/docker:ro"
+      - "/var/lib/docker:/var/lib/docker"
+    command: hyperkube kubelet --api-servers http://apiserver:8080
+
+  "apiserver":
+    image: "${K8S_IMAGE}"
+    depends_on:
+      - "etcd"
+    networks:
+      k8s_infra:
+    ports:
+      - "8080:8080"
+    command: hyperkube apiserver --insecure-bind-address 0.0.0.0 --etcd-servers http://etcd:2379 --service-cluster-ip-range 10.0.0.0/24
+
+  "scheduler":
+    image: "${K8S_IMAGE}"
+    depends_on:
+      - "apiserver"
+    networks:
+      k8s_infra:
+    command: hyperkube scheduler --master http://apiserver:8080
+
+  "controller-manager":
+    image: "${K8S_IMAGE}"
+    depends_on:
+      - "apiserver"
+    networks:
+      k8s_infra:
+    command: hyperkube controller-manager --master http://apiserver:8080
