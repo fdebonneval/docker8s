@@ -1,3 +1,3 @@
-    # make network
+    # make build
     # make up
 
