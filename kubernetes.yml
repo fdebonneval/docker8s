@@ -8,7 +8,7 @@ networks:
     driver: "bridge"
     ipam:
       config:
-         - subnet: "172.18.0.0/16"
+         - subnet: "172.20.0.0/16"
 
 services:
   etcd:
@@ -33,7 +33,7 @@ services:
       - "/var/run/docker.pid:/var/run/docker.pid:ro"
       - "/usr/bin/docker:/usr/bin/docker:ro"
       - "/var/lib/docker:/var/lib/docker"
-    command: hyperkube kubelet --api-servers http://apiserver:8080
+    command: hyperkube kubelet --api-servers http://apiserver:8080 --network-plugin=cni --network-plugin-dir /etc/cni/net.d/cni-conf
 
   "apiserver":
     image: "${K8S_IMAGE}"

@@ -1,0 +1,38 @@
+#/bin/bash
+
+set -xe
+
+
+#-------------------------------------------------------------------------------
+# pre flight packages inventory
+#-------------------------------------------------------------------------------
+dpkg -l | awk '{print $2}' > /tmp/resources/pkg-list-pre.txt
+
+#-------------------------------------------------------------------------------
+# image build
+#-------------------------------------------------------------------------------
+apt-get update
+apt-get install -y curl iptables
+curl -sL -o /bin/hyperkube \
+  https://storage.googleapis.com/kubernetes-release/release/v${application_version}/bin/linux/amd64/hyperkube
+chmod 755 bin/hyperkube
+
+mkdir -p /etc/cni/net.d
+mv /tmp/resources/cni-conf /etc/cni/net.d
+
+#-------------------------------------------------------------------------------
+# cleanup
+#-------------------------------------------------------------------------------
+
+# sources and builds
+dpkg -l | awk '{print $2}' > /tmp/resources/pkg-list-post.txt
+apt-get purge -y --force-yes $(diff \
+    --unchanged-line-format= \
+    --old-line-format= \
+    --new-line-format='%L' \
+    /tmp/resources/pkg-list-pre.txt \
+    /tmp/resources/pkg-list-post.txt | \
+    grep -v iptables | \
+    xargs)
+rm -Rf /var/lib/apt
+exit 0

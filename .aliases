@@ -1,2 +1,2 @@
-alias kubeclt='docker-compose -f kubernetes.yml exec apiserver hyperkube kubectl 2>/dev/null'
+alias kubectl='docker-compose -f kubernetes.yml exec apiserver hyperkube kubectl 2>/dev/null'
 alias etcdctl='docker-compose -f kubernetes.yml exec etcd etcdctl 2>/dev/null'

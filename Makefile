@@ -1,5 +1,5 @@
 VERSION    ?= 1.4.0
-REPOSITORY ?= hypercube
+REPOSITORY ?= hyperkube
 IMAGE      ?= $(REPOSITORY):$(VERSION)
 
 BUILD_OPTIONS = -t $(IMAGE)
@@ -18,18 +18,20 @@ RUN_OPTIONS += -v /usr/bin/docker:/usr/bin/docker:ro
 RUN_OPTIONS += --privileged
 RUN_OPTIONS += -p 10250:10250
 
-default: run
+default: up
 
 build:
 	docker build $(BUILD_OPTIONS) .
 
 alias:
 	source .aliases
-run:
+
+up:
 	docker network ls | grep k8s_service || \
 	  docker network create --subnet=10.0.0.0/16 k8s_service
 	K8S_IMAGE=$(IMAGE) docker-compose -f kubernetes.yml up
 
 clean:
 	docker-compose -f kubernetes.yml rm
+	docker rmi $(IMAGE)
 	docker network rm k8s_service
